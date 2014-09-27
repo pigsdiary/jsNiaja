@@ -271,4 +271,179 @@ javascript最重要的特性之一就是，在表达式可以出现的任何位�
 当一个函数是命名的时候，这个名字在声明该函数的整个作用域内都是可以被访问的。
 此外，如果一个命名函数是在顶级（即不在任何函数体内）声明的，在window实例上将会使用这个函数名创建一个指向该函数的属性。
 
-最后，所有的函数都有一个name属性，该属性用字符串保存着函数的名字。匿名函数也依旧拥有这个属性，其值为空字符串。
+最后，所有的函数都有一个name属性，该属性用字符串类型保存着函数的名字。匿名函数也依旧拥有这个属性，其值为空字符串。
+
+我们可以写一些测试例子证明以上所说的。如下：
+
+    <script type="text/javascript">
+    //定义一个命名函数。该名字在当前的整个作用域内都是可被访问的，同时也被隐性地添加为window的一个属性。
+    function isNimble(){ return true; }
+    //第一个测试，证明了在window上确实利用函数创建了一个属性，指向该函数。
+    assert(
+        typeof window.isNimble === "function",
+        "isNimble() defined");
+    //第二个测试，证明了函数的name属性确实保存着它的名字。
+    assert(
+        isNimble.name === "isNimble",
+        "isNimble() has a name");
+
+    //定义一个匿名函数，并赋值给一个变量：canFly。这个变量是window的一个属性，而且函数的name属性为空。
+    var canFly = function(){ return true; };
+    //证明canFly这个变量引用着这个匿名函数，它的name属性是空字符串而不是null。
+    assert(
+        typeof window.canFly === "function",
+        "canFly() defined");
+    assert(
+        canFly.name === "",
+        "canFly() has no name");
+
+    //创建一个匿名函数，通过window的一个属性来引用。
+    window.isDeadly = function(){ return true; };
+    //证明该属性确实引用着这个函数。
+    assert(
+        typeof window.isDeadly === "function",
+        "isDeadly() defined");
+
+    //在outer函数里面定义了一个inner函数。
+    function outer(){
+        //证明了在inner函数声明之前或之后，都可以引用它。并且它并不存在于全局作用域上。
+        assert(typeof inner === "function",
+        "inner()inscopebeforedeclaration");
+
+        function inner(){}
+        assert(
+            typeof inner === "function",
+            "inner() in scope after declaration");
+        assert(
+            window.inner === undefined,
+            "inner() not in global scope");
+    }
+
+    outer();
+    //证明了outer函数可以在全局作用域访问，而inner函数则不能。
+    assert(
+        window.inner === undefined,
+        "inner() still not in global scope");
+
+    //将一个命名函数赋值给一个变量，该变量名并不会对函数的name属性造成影响。name属性由定义函数的字面量决定。
+    window.wieldsSword = function swingsSword() { return true; };
+    assert(
+        window.wieldsSword.name === 'swingsSword',
+        "wieldSword's real name is swingsSword");
+    </script>
+
+在这个测试例子中，我们通过三种不同的方式声明了全局作用域内的函数：
+
+* isNimble()函数以命名函数的方式声明。这是大部分开发者见过的最普遍的方式。当你看完这本书，你就不会这样写了。
+* 创建了一个匿名函数并赋值给一个全局变量canFly。由于javascript的函数性特性，函数可以通过它的引用来调用：canFly()。在这方面，这与声明一个名为"canFly"的命名函数一样，
+但并不完全相同。最主要的区别是函数的name属性是""，而不是"canFly"。
+* 声明了另一个匿名函数并赋值给一个名为isDeadly的window属性。同样的，我们可以通过这个属性来调用函数（window.isDeadly()或者更直接点isDeadly()），
+在功能上，这与一个名为"isDeadly"的命名函数一样。
+
+在整个例子中，我们通过断言证明了以下这些：
+
+* window.isNimble被定义为一个函数。这证明了命名的函数被添加成为window的属性。
+* 命名函数isNimble拥有一个name属性，值为字符串"isNimble"。
+* window.canFly被定义为一个函数，证明了全局变量，甚至那些包含了其他的函数，最终都存在于window上。
+* 赋值给canFly的匿名函数拥有一个name属性，值为空字符串。
+* window.isDeadly被定义为一个函数。
+
+接着便到了测试局部函数的时间了。我们创建了一个函数，并恰当地命名为outer，以便测试在非全局作用域内声明的函数。
+我们声明了一个内部函数名为inner。但在它声明之前，我们测试到它是存在于作用域内的。这证明了，一个函数在声明它的整个作用域内都是可访问的，可以提前引用。
+
+接着我们声明了函数，检查了它outer函数的作用域内，但不在全局作用域内。
+
+最后，我们执行了内部测试并再次断言，inner函数并不在全局作用域内。
+
+这些概念非常重要,因为它们放下了功能性代码提供的命名、流程和结构基础，并通过我们采用的函数式编程，建立了对我们大有裨益的框架。
+
+我们创建inner函数的目的，是说明在outer函数里，可以提前引用inner函数。
+你或许会好奇：当我们声明一个函数的时候，这个函数在哪个作用域内是可被访问的呢？
+这是个好问题，下面我们将会回答这个问题。
+
+###作用域和函数
+
+当我们声明一个函数的时候，我们不仅仅需要关心这个函数在哪个作用域内可被访问，同时也要关心函数本身创建的作用域以及这些作用域是如何影响函数内部的声明的。
+
+javascript里的作用域表现得与其他大部分那些受C语法影响的语言有些不同，大部分那些语言使用了花括号作为块级分隔，每一块便创建一个作用域。而javascript并不是这样。
+
+在javascript中，作用域通过函数来声明，而不是块。在一个块里创建的声明的作用域，在这个块结束的时候并不会终止。
+
+考虑下这些代码：
+
+    if (window) {
+        var x = 213;
+    }
+    alert(x);
+
+在大部分其他语言里，期望是，x的作用域在if创建的块结束时便终止了，alert时的x为undefined。
+但当我们在页面上运行这些代码的时候，213将被alert出来，因为javascript在块结束的时候，并不会终止作用域。
+
+这看起来貌似挺简单的。但作用域规则还是有一些细微区别的，这取决于声明的是什么。有些区别可能会让你惊讶：
+
+* 声明变量的作用域，从声明的地方开始，到声明它的函数的结尾。忽略代码块的嵌套。
+* 命名函数的作用域，存在于声明它的整个函数里。忽略代码块的嵌套。（有些称之为hoisting）
+* 出于声明作用域的目的，全局上下文表现得就像一个包含着页面上所有代码的大函数。
+
+让我们证明一下，看看这个代码片段：
+
+    function outer(){
+        var a = 1;
+        function inner(){ // does nothing  }
+        var b = 2;
+        if (a == 1) {
+            var c = 3;
+        }
+    }
+    outer();
+
+在这段代码里，我们声明了五个变量：一个名为outer的外部函数，一个位于outer内部的名为inner的函数，还有三个位于外部函数里面的数字变量名为a,b,c。
+
+为了测试这些变量在哪里位于作用域内，在哪里处于作用域外，我们将在例子中散布一个测试的代码块，测试每一个声明的变量。
+每个测试都断言那个变量处于作用域内（除了第一个断言，它并不是用来测试的，它只是用来帮助代码更易于阅读）
+
+以下是测试的代码块：
+
+    assert(true,"some descriptive text");
+    assert(typeof outer==='function',
+      "outer() is in scope");
+    assert(typeof inner==='function',
+      "inner() is in scope");
+    assert(typeof a==='number',
+      "a is in scope");
+    assert(typeof b==='number',
+      "b is in scope");
+    assert(typeof c==='number',
+      "c is in scope");
+
+要注意在大多数情况下，有些断言将会失败。在正常情况下，我们都期望我们的断言总是成功的。
+但在这段仅仅用来示范的代码里，这符合我们的目的：断言的成功与失败，和被测试的变量是否处于作用域内相符。
+
+下面便是完整的测试例子，删掉了重复的测试代码块以便易于理解（无论在哪里删掉测试代码块，我们都用// test code here 作出提示，让你清楚测试代码块位于这里。）
+
+    <script type="text/javascript">
+    assert(true,"|----- BEFORE OUTER -----|");
+    // test code here
+
+    function outer(){
+        assert(true,"|----- INSIDE OUTER, BEFORE a -----|");
+        // test code here
+        var a = 1;
+        assert(true,"|----- INSIDE OUTER, AFTER a -----|");
+        // test code here
+        function inner(){ // does nothing }
+        var b = 2;
+        assert(true,"|----- INSIDE OUTER, AFTER inner() AND b -----|");
+        // test code here
+        if (a == 1) {
+            var c = 3;
+            assert(true,"|----- INSIDE OUTER, INSIDE if -----|");
+            // test code here
+        }
+        assert(true,"|----- INSIDE OUTER, OUTSIDE if -----|");
+        // test code here
+    }
+    outer();
+    assert(true,"|----- AFTER OUTER -----|");
+    // test code here
+    </script>
